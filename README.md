@@ -1,108 +1,99 @@
-# Referral iOS SDK 
+# Advato Referral SDK - iOS 🚀
 
-### Installation
+A powerful and flexible referral system SDK for iOS applications that enables easy implementation of referral programs, sharing mechanisms, and referral tracking.
 
-#### Swift Package Manager (SPM)
-1. In Xcode, go to `File > Swift Packages > Add Package Dependency`
-2. Add --SDK repository URL--
+## Table of Contents
 
-### Usage
+1. [Features](#features)
+2. [Requirements](#requirements)
+3. [Installation](#installation)
+4. [Basic Setup](#basic-setup)
+5. [Implementation Guide](#implementation-guide)
+6. [Advanced Features](#advanced-features)
+7. [Debugging](#debugging)
+8. [Support](#support)
+9. [API Documentation](#api-documentation)
 
-#### Configuration
+## Features
 
-SDK components, such as the share button or popup, can be customized from the web dashboard.
-This allows updating the configuration without the need to re-download the app.
+- 🔄 Easy referral link sharing
+- 🎨 Customizable UI components
+- 📱 Native share sheet integration
+- 🔗 Deep link handling
+- ⚡️ Remote configuration
+- 📊 Analytics and tracking
+- 🎯 Custom popup notifications
+- 🔐 Secure authentication
+- 🌐 Offline caching support
 
-#### Start
+## Requirements
 
-To start the SDK, you must provide it with the `ReferalSDKEntryPoint` struct,
-which requires an app's SDK access token and a unique user ID for each user in your app. 
-The start method should be called at app launch and once the user ID is available.
-Starting the SDK will fetch, apply, and cache its latest configuration and authorize the current user.
+- iOS 13.0+
+- Swift 5.0+
+- Xcode 13.0+
+
+## Installation
+
+### Swift Package Manager
+
+1. In Xcode, go to `File > Add Package Dependencies`
+2. Enter the package URL: `https://github.com/advato/referrals-sdk-ios/`
+3. Select the version you want to use
+4. Click "Add Package"
+
+## Basic Setup
+
+### 1. Initialize the SDK
+
+First, import the SDK and initialize it with your credentials:
 
 ```swift
+import referral_ios_sdk
+
 let entryPoint = ReferalSDKEntryPoint(
-    accessToken: "yourAccessToken",
-    userId: "uniqueUserId"
+    accessToken: "your_access_token",
+    userId: "unique_user_id"
 )
 ReferralSDK.shared.start(entryPoint: entryPoint)
 ```
 
-#### Handling referral links
+The start method should be called at app launch and once the user ID is available. This will:
 
+- Fetch and apply the latest configuration
+- Authorize the current user
+- Cache necessary data for offline use
 
-To enable referral links, add your app's URL scheme by going to `.xcodeproj -> Targets -> Info -> URL Types.`
-Then, paste this URL scheme into the **URL Scheme** field located in the dashboard’s **Customization** tab. 
-This setup allows the landing page to generate referral deep links for your app.
+### 2. Handle Deep Links
 
-To handle referral links, call `ReferralSDK.shared.handleIncomingLink(_:)` from the appropriate method that manages incoming URLs (e.g., SceneDelegate `scene(_:willConnectTo:options:)` and `scene(_: , openURLContexts)`, SwiftUI `onOpenURL(perform:)` etc.) and pass the incoming link as a parameter.
+Choose the implementation that matches your app's architecture:
 
-##### Examples
-
-If your app is using SceneDelegate:
+#### For SceneDelegate-based apps:
 
 ```swift
-import UIKit
-import referral_ios_sdk
-
-class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-    // Rest of the code
-    
-    func scene(
-        _ scene: UIScene, 
-        willConnectTo session: UISceneSession,
-        options connectionOptions: UIScene.ConnectionOptions
-     ) {
-        guard let _ = (scene as? UIWindowScene) else { return }
-        
-        guard let url = connectionOptions.urlContexts.first?.url else {
-            return
-        }
-        
-        ReferralSDK.shared.handleIncomingLink(url)
-    }
-    
-    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
-        guard let url = URLContexts.first?.url else {
-            return
-        }
-        
-        ReferralSDK.shared.handleIncomingLink(url)
-    }
+func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+    guard let url = URLContexts.first?.url else { return }
+    ReferralSDK.shared.handleIncomingLink(url)
 }
 ```
 
-If your app is NOT using SceneDelegate:
+#### For AppDelegate-based apps:
 
 ```swift
-import UIKit
-import referral_ios_sdk
-
-@main
-class AppDelegate: UIResponder, UIApplicationDelegate {
-    // Rest of the code
-    
-    func application(
-        _ app: UIApplication,
-        open url: URL,
-        options: [UIApplication.OpenURLOptionsKey : Any] = [:]
-    ) -> Bool {
-        ReferralSDK.shared.handleIncomingLink(url)
-        return true
-    }
+func application(
+    _ app: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey : Any] = [:]
+) -> Bool {
+    ReferralSDK.shared.handleIncomingLink(url)
+    return true
 }
 ```
 
-SwiftUI:
+#### For SwiftUI apps:
 
 ```swift
-import SwiftUI
-import ReferralSDKDraft
-
 @main
-struct SwiftUITestApp: App {
-    // Rest of the code
-
+struct MyApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -114,89 +105,161 @@ struct SwiftUITestApp: App {
 }
 ```
 
-#### Share Button
+### 3. Add Share Button
 
-Use ReferralButton to allow users to share their referral link. 
-Tapping this button performs the following actions:
-1. Copies the referral URL to the clipboard.
-2. Opens a `UIActivityViewController` to share the referral link.
-3. Sends a request to track the button tap event.
-Some of the button's properties, such as background color, title text, border color, font, and border width, 
-are configured by the SDK.
-
-##### Examples
-
-UIKit:
+#### UIKit Implementation
 
 ```swift
-import UIKit
-import referral_ios_sdk
+let referralButton = ReferralButton()
+view.addSubview(referralButton)
 
-class ViewController: UIViewController {
-    let referralButton: ReferralButton = {
-        let button = ReferralButton()
-        button.layer.cornerRadius = 16
-        button.layer.masksToBounds = true
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        setupUI()
-    }
-    
-    func setupUI() {
-        view.addSubview(referralButton)
-        
-        NSLayoutConstraint.activate([
-            referralButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            referralButton.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            referralButton.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.8),
-            referralButton.heightAnchor.constraint(equalToConstant: 50)
-        ])
-    }
-}
+// Setup constraints
+referralButton.translatesAutoresizingMaskIntoConstraints = false
+NSLayoutConstraint.activate([
+    referralButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+    referralButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+    referralButton.widthAnchor.constraint(equalToConstant: 200),
+    referralButton.heightAnchor.constraint(equalToConstant: 44)
+])
 ```
 
-SwiftUI:
+#### SwiftUI Implementation
 
 ```swift
-
-import SwiftUI
-import referral_ios_sdk
-
 struct ContentView: View {
     var body: some View {
         ReferralButtonView()
-            .aspectRatio(6.5, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .padding(20)
+            .frame(width: 200, height: 44)
     }
 }
 ```
 
-#### Fetching Referral Data
+When tapped, the ReferralButton automatically:
 
-The `getUsersReferrals(completionHandler:)` method allows you to retrieve referral data for the user whose ID is passed in the `EntryPoint`. 
+1. Copies the referral URL to clipboard
+2. Opens a UIActivityViewController
+3. Tracks the share event
 
-The response includes an array of successfully referred user IDs and the total count of these referrals.
+## Advanced Features
 
-The result is provided through the `completionHandler` closure, which is always executed on the **main thread** to ensure compatibility with UI updates.
+### Remote Configuration
 
-The method relies on the entry point, which must be provided during the initial SDK setup using the `start(entryPoint:)` method.
+The SDK supports dynamic configuration through the dashboard, including:
 
-##### Usage Example
+- 🎨 Button styling (colors, fonts, text)
+- 📱 Popup notifications
+- 📝 Share message templates
+- 📊 Event tracking parameters
 
 ```swift
-ReferralSDK.shared.getUsersReferrals { result in
-    switch result {
-    case .success(let referrals):
-        print("Successfully referred user IDs: \(referrals.ids)")
-        print("Total referrals: \(referrals.total)")
-        
-    case .failure(let error):
-        print("Failed to fetch referrals: \(error.localizedDescription)")
-    }
-}
+// Access current configuration
+let config = ReferralSDK.shared.configuration
+
+// Example: Custom button styling
+referralButton.applyCustomStyle(
+    backgroundColor: config.buttonColor,
+    textColor: config.textColor
+)
 ```
+
+### Analytics and Tracking
+
+```swift
+// Track custom events
+ReferralSDK.shared.trackEvent(
+    name: "custom_share",
+    properties: ["channel": "instagram"]
+)
+```
+
+## Debugging
+
+Enable detailed logging in debug builds:
+
+```swift
+// Enable debug logging
+Environment.isDebugEnabled = true
+
+// Add launch argument
+// -RefSDKDebugEnabled
+```
+
+Common debug logs:
+
+- Network requests
+- Configuration updates
+- Deep link handling
+- Share events
+
+## Configuration Reference
+
+### ReferalSDKEntryPoint
+
+- `accessToken` (String): Your API access token
+- `userId` (String): Unique identifier for the current user
+- `environment` (Environment): .production or .development (optional)
+
+### Button Configuration
+
+- `hexBackgroundColor` (String): Button background color in hex format
+- `hexTitleColor` (String): Button text color in hex format
+- `title` (String): Button text
+
+## SDK Notifications
+
+- `ReferralSDKConfigUpdated`: Fired when remote configuration is updated
+- `ReferralSDKUserRegistered`: Fired when user registration completes
+- `ReferralSDKUsingCachedData`: Fired when falling back to cached data
+
+## Memory Management
+
+The SDK uses caching for optimal performance. Consider the following:
+
+- Clear caches when receiving memory warnings
+- Implement proper cleanup in viewDidDisappear
+- Handle background/foreground transitions
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+1. **SDK Not Initializing**
+
+   - Verify access token is correct
+   - Ensure userId is not nil
+   - Check network connectivity
+
+2. **Deep Links Not Working**
+
+   - Verify URL scheme configuration
+   - Check SceneDelegate/AppDelegate implementation
+   - Enable debug logging for detailed information
+
+3. **Share Button Not Responding**
+   - Verify initialization sequence
+   - Check configuration fetch status
+   - Ensure proper constraints/layout
+
+### Best Practices
+
+1. **Performance**
+
+   - Initialize SDK after app launch
+   - Cache referral data when possible
+   - Implement proper error handling
+
+2. **Security**
+   - Store access token securely
+   - Validate deep links
+   - Handle user authentication properly
+
+## Support
+
+- 📚 Documentation: [Full Implementation Guide](IMPLEMENTATION.md)
+- 📧 Email: support@useadvato.com
+  
+---
+
+## API Documentation
+
+For comprehensive API documentation, please visit [Advato API Documentation](https://api.useadvato.com/api#/).
