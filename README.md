@@ -259,7 +259,3 @@ The SDK uses caching for optimal performance. Consider the following:
 - 📧 Email: support@useadvato.com
   
 ---
-
-## API Documentation
-
-For comprehensive API documentation, please visit [Advato API Documentation](https://api.useadvato.com/api#/).
