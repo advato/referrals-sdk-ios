@@ -12,7 +12,6 @@ A powerful and flexible referral system SDK for iOS applications that enables ea
 6. [Advanced Features](#advanced-features)
 7. [Debugging](#debugging)
 8. [Support](#support)
-9. [API Documentation](#api-documentation)
 
 ## Features
 
