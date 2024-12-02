@@ -139,6 +139,33 @@ When tapped, the ReferralButton automatically:
 2. Opens a UIActivityViewController
 3. Tracks the share event
 
+### 4. Fetching Referral Data
+
+The `getUsersReferrals(completionHandler:)` method allows you to retrieve referral data for the user whose ID is passed in the `EntryPoint`. 
+
+The response includes an array of successfully referred user IDs and the total count of these referrals.
+
+The result is provided through the `completionHandler` closure, which is always executed on the **main thread** to ensure compatibility with UI updates.
+
+The method relies on the entry point, which must be provided during the initial SDK setup using the `start(entryPoint:)` method.
+
+##### Usage Example
+
+```swift
+ReferralSDK.shared.getUsersReferrals { result in
+    switch result {
+    case .success(let referrals):
+        print("Successfully referred user IDs: \(referrals.ids)")
+        print("Total referrals: \(referrals.total)")
+        
+    case .failure(let error):
+        print("Failed to fetch referrals: \(error.localizedDescription)")
+    }
+}
+```
+
+
+
 ## Advanced Features
 
 ### Remote Configuration
