@@ -28,8 +28,8 @@ extension PopupConfig {
         subtitleWelcomeText: "You've been successfully registered as a referral!",
         titleFontSize: 18,
         subtitleFontSize: 14,
-        hexBackgroundColor: "000000",
-        hexTextColor: "ffffff",
-        hexErrorTextColor: "ff0000"
+        hexBackgroundColor: "3D3AF2",
+        hexTextColor: "FFFFFF",
+        hexErrorTextColor: "FF7000"
     )
 }

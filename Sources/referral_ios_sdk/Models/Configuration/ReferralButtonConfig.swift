@@ -1,6 +1,6 @@
 
 
-import UIKit
+import Foundation
 
 struct ReferralButtonConfig: Codable {
     let hexBackgroundColor: String
@@ -22,11 +22,11 @@ struct ReferralButtonConfig: Codable {
 
 extension ReferralButtonConfig {
     static let `default` = ReferralButtonConfig(
-        hexBackgroundColor: UIColor.systemBlue.hexString,
-        hexTitleColor: "ffffff",
-        hexBorderColor: "ffffff",
+        hexBackgroundColor: "3D3AF2",
+        hexTitleColor: "FFFFFF",
+        hexBorderColor: "FFFFFF",
         borderWidth: 0,
-        fontSize: UIFont.systemFontSize,
+        fontSize: 18,
         title: "Get Referral Link"
     )
 }

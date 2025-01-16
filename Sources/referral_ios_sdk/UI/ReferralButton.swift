@@ -58,7 +58,7 @@ private extension ReferralButton {
     
     @objc
     func setupUI() {
-        let config = ReferralSDK.shared.configuration.button
+        let config = Advato.shared.configuration.button
         backgroundColor = UIColor(hexString: config.hexBackgroundColor)
         setTitleColor(UIColor(hexString: config.hexTitleColor), for: .normal)
         layer.borderColor = UIColor(hexString: config.hexBorderColor).cgColor
@@ -69,23 +69,8 @@ private extension ReferralButton {
     
     @objc
     func showSharePopup() {
-        guard let refCode = ReferralSDK.shared.referralCode,
-              let token = ReferralSDK.shared.entryPoint?.accessToken,
-              let refUrl = URL(string: "https://adva.to/welcome?code=\(refCode)&token=\(token)") else {
-            let errorPopup = PopupView()
-            errorPopup.show(
-                title: "Oops!",
-                subtitle: "Could not share a link",
-                isErrorMessage: true
-            )
-            return
+        Advato.shared.showReferralLinkShareSheet() {
+            Advato.shared.trackShareButtonTap() // Legacy event
         }
-        ReferralSDK.shared.trackShareButtonTap()
-        UIPasteboard.general.url = refUrl
-        let activityController = UIActivityViewController(
-            activityItems: [refUrl],
-            applicationActivities: nil
-        )
-        UIApplication.shared.topViewController?.present(activityController, animated: true)
     }
 }

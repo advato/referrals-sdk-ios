@@ -12,7 +12,7 @@ final class DeepLinkHandler {
             }
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                ReferralSDK.shared.registerUser(with: referralCode)
+                Advato.shared.registerUser(with: referralCode)
             }
         }
     }

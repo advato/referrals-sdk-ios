@@ -5,6 +5,8 @@ import Foundation
 enum UserDefaultsKeys: String {
     case appConfig
     case user
+    case lastPromptShowDate
+    case slug
 }
 
 final class UserDefaultsManager {

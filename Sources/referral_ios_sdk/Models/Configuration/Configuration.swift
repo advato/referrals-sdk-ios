@@ -15,17 +15,26 @@ struct ConfigResponse: Decodable {
 struct AppConfig: Decodable {
     let id: Int
     let token: String
+    let slug: String
     let settings: Settings
 }
 
 struct Settings: Codable {
     let button: ReferralButtonConfig
     let popup: PopupConfig
+    let prompt: PromptConfig
+    let promptsEnabled: Bool
+    let eventCombinations: [EventCombination]
+    let promptCooldown: Int
 }
 
 extension Settings {
     static let `default` = Settings(
         button: .default,
-        popup: .defaultWelcome
+        popup: .defaultWelcome,
+        prompt: .defaultReferralPrompt,
+        promptsEnabled: true,
+        eventCombinations: [],
+        promptCooldown: 604800
     )
 }

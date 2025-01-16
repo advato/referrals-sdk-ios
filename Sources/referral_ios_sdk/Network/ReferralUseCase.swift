@@ -32,13 +32,26 @@ struct ReferralUseCase {
     }
     
     @discardableResult
-    func shareButtonEvent(
+    func shareButtonEvent( // Legacy event
         body: ShareEventRequestBody,
-        onSuccess: @escaping SuccessResult<ShareEventResponse>,
+        onSuccess: @escaping SuccessResult<EventResponse>,
         onError: ErrorResult? = nil
     ) -> Cancellable? {
         return network.send(
             provider: ReferralRequestProvider.shareEvent(body: body),
+            onSuccess: onSuccess,
+            onError: onError
+        )
+    }
+    
+    @discardableResult
+    func trackEvent(
+        body: EventRequestBody,
+        onSuccess: @escaping SuccessResult<EventResponse>,
+        onError: ErrorResult? = nil
+    ) -> Cancellable? {
+        return network.send(
+            provider: ReferralRequestProvider.trackEvent(body: body),
             onSuccess: onSuccess,
             onError: onError
         )

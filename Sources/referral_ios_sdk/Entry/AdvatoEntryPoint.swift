@@ -2,10 +2,10 @@
 
 import Foundation
 
-/// The `ReferalSDKEntryPoint` struct holds the essential properties required to start the SDK.
+/// The `AdvatoEntryPoint` struct holds the essential properties required to start the SDK.
 /// This struct should be initialized with the access token and user ID properties,
-/// and passed to the `ReferralSDK.start(entryPoint:)` method  during the configuration phase.
-public struct ReferalSDKEntryPoint {
+/// and passed to the `Advato.shared.start(entryPoint:)` method  during the configuration phase.
+public struct AdvatoEntryPoint {
     let accessToken: String
     let userId: String
     

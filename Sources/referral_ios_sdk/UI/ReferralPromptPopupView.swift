@@ -2,11 +2,12 @@
 
 import UIKit
 
-final class PopupView: UIView {
+final class ReferralPromptPopupView: UIView {
     private let overlayViewController: UIViewController = {
         let viewController = UIViewController()
         viewController.view.backgroundColor = .clear
         viewController.modalPresentationStyle = .overFullScreen
+        viewController.modalTransitionStyle = .crossDissolve
         return viewController
     }()
     
@@ -30,12 +31,13 @@ final class PopupView: UIView {
         return label
     }()
     
-    private let config = Advato.shared.configuration.popup
+    private let config = Advato.shared.configuration.prompt
     private let usesErrorTextColor = false
     private var panGestureRecognizer: UIPanGestureRecognizer!
     private var topConstraint: NSLayoutConstraint?
     private var maxY: CGFloat = 0
     private var dismissalWorkItem: DispatchWorkItem?
+    private var topViewController: UIViewController?
     
     init() {
         super.init(frame: .zero)
@@ -48,18 +50,15 @@ final class PopupView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func show(
-        title: String,
-        subtitle: String,
-        isErrorMessage: Bool = false
-    ) {
+    func show() {
         guard let topViewController = UIApplication.shared.topViewController else { return }
+        self.topViewController = topViewController
         
-        titleLabel.text = title
-        subtitleLabel.text = subtitle
-        if isErrorMessage {
-            subtitleLabel.textColor = UIColor(hexString: config.hexErrorTextColor)
-        }
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        addGestureRecognizer(tapGesture)
+        
+        titleLabel.text = config.titleText
+        subtitleLabel.text = config.subtitleText
         
         overlayViewController.view.addSubview(self)
         overlayViewController.view.layoutIfNeeded()
@@ -77,12 +76,11 @@ final class PopupView: UIView {
         
         topViewController.present(overlayViewController, animated: false) { [self] in
             animateIn()
-            startDismissalTimer()
         }
     }
 }
 
-private extension PopupView {
+private extension ReferralPromptPopupView {
     func setup() {
         translatesAutoresizingMaskIntoConstraints = false
         backgroundColor = UIColor(hexString: config.hexBackgroundColor)
@@ -164,8 +162,8 @@ private extension PopupView {
             superview?.layoutIfNeeded()
             
         case .ended, .cancelled:
-            startDismissalTimer()
             if velocity.y < -100 || percentage < 0.5 {
+                self.onDismiss()
                 animateOut()
             } else {
                 topConstraint?.constant = Constants.topConstraintConstant
@@ -178,10 +176,20 @@ private extension PopupView {
             break
         }
     }
+    
+    @objc
+    func handleTap() {
+        overlayViewController.dismiss(animated: true)
+        Advato.shared.showReferralLinkShareSheet(on: self.topViewController)
+    }
+    
+    func onDismiss() {
+        
+    }
 }
 
 // MARK: - Constants
-private extension PopupView {
+private extension ReferralPromptPopupView {
     struct Constants {
         static let topConstraintConstant: CGFloat = 20
         static let animationDuration: Double = 0.3

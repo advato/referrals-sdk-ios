@@ -1,14 +1,16 @@
 
 
-import Foundation
+import UIKit
 
-public final class ReferralSDK {
-    public static let shared = ReferralSDK()
+public final class Advato {
+    public static let shared = Advato()
     
     private lazy var useCase = ReferralUseCase()
     private lazy var deepLinkHandler = DeepLinkHandler()
     private lazy var userDefaultsManager = UserDefaultsManager()
-    private(set) var entryPoint: ReferalSDKEntryPoint?
+    private lazy var referralPromptManager = ReferralPromptManager()
+    private var slug: String?
+    private(set) var entryPoint: AdvatoEntryPoint?
     private(set) var referralCode: String?
     private(set) lazy var configuration: Settings = .default
     private lazy var taskQueue = DispatchQueue(label: "ref.sdk.concurrent.queue", attributes: .concurrent)
@@ -16,11 +18,11 @@ public final class ReferralSDK {
     private init() { }
 }
 
-public extension ReferralSDK {
+public extension Advato {
     /// Fetches, applies and caches the latest SDK configuration and authorizes the current user. 
     /// Call this method at app launch and once the user ID is available.
     /// - Parameter entryPoint: The entry point containing the app's SDK `accessToken` and a  unique `userId` for each user in your app.
-    func start(entryPoint: ReferalSDKEntryPoint) {
+    func start(entryPoint: AdvatoEntryPoint) {
         self.entryPoint = entryPoint
         configure()
     }
@@ -73,9 +75,28 @@ public extension ReferralSDK {
             }
         )
     }
+    
+    /// Processes an event sent by the host app to the SDK.
+    ///
+    /// The SDK tracks received events and checks them against pre-defined combinations configured via the web dashboard.
+    /// When a combination is matched, if it has not been triggered during the current session and the cooldown period has elapsed,
+    /// a prompt is displayed encouraging users to share their referral link.
+    ///
+    /// - Parameter event: A `String` representing the event sent by the host app. Ensure this matches an event defined in the web dashboard.
+    func sendEvent(_ event: String) {
+        referralPromptManager.handleEvent(event)
+    }
+    
+    /// Resets the cooldown period for the referral prompt.
+    ///
+    /// This method allows the referral prompt to display immediately
+    /// the next time a matching event combination is detected.
+    func resetPromptCooldown() {
+        referralPromptManager.resetPromptShowCooldown()
+    }
 }
 
-extension ReferralSDK {
+extension Advato {
     func registerUser(with referrerCode: String? = nil) {
         guard let entryPoint else { return }
         useCase.registerUser(
@@ -120,7 +141,41 @@ extension ReferralSDK {
         )
     }
     
-    func trackShareButtonTap()  {
+    func showReferralLinkShareSheet(on viewController: UIViewController? = nil, onSuccess: (() -> Void)? = nil) {
+        guard let refCode = Advato.shared.referralCode,
+              let slug,
+              let refUrl = URL(string: "http://adva.to/\(slug)/\(refCode)") else {
+            let errorPopup = PopupView()
+            errorPopup.show(
+                title: "Oops!",
+                subtitle: "Could not share a link",
+                isErrorMessage: true
+            )
+            return
+        }
+        UIPasteboard.general.url = refUrl
+        let hostViewController = viewController ?? UIApplication.shared.topViewController
+        let activityController = UIActivityViewController(
+            activityItems: [refUrl],
+            applicationActivities: nil
+        )
+        hostViewController?.present(activityController, animated: true) {
+            onSuccess?()
+        }
+    }
+    
+    func trackEvent(_ event: String) {
+        guard let entryPoint else { return }
+        useCase.trackEvent(
+            body: .init(
+                event: event,
+                userId: entryPoint.userId,
+                accessToken: entryPoint.accessToken
+            ), onSuccess: {_ in }
+        )
+    }
+    
+    func trackShareButtonTap() { // Legacy event
         guard let entryPoint else { return }
         useCase.shareButtonEvent(
             body: .init(
@@ -129,14 +184,21 @@ extension ReferralSDK {
             ), onSuccess: {_ in }
         )
     }
+    
+    public func showReferralPrompt() {
+        let promptPopup = ReferralPromptPopupView()
+        promptPopup.show()
+    }
 }
 
-private extension ReferralSDK {
+private extension Advato {
     func configure() {
         if let config = fetchConfiguration() {
             configuration = config
             notifyConfigurationLoaded()
         }
+        
+        slug = fetchSlug()
         
         taskQueue.async { [unowned self] in
             guard let entryPoint else { return }
@@ -145,6 +207,8 @@ private extension ReferralSDK {
                 configuration = response.data.configJson.settings
                 saveConfiguration(configuration)
                 notifyConfigurationLoaded()
+                slug = response.data.configJson.slug
+                saveSlug(slug!)
                 handleUserRegistration()
             }
         }
@@ -176,9 +240,24 @@ private extension ReferralSDK {
         userDefaultsManager.fetchDecodedValue(for: .appConfig)
     }
     
+    func saveSlug(_ slug: String) {
+        userDefaultsManager.save(slug, for: .slug)
+    }
+    
+    func fetchSlug() -> String? {
+        userDefaultsManager.fetchRawValue(for: .slug)
+    }
+    
     func notifyConfigurationLoaded() {
+        updateReferralPromptManager()
         DispatchQueue.main.async {
             NotificationCenter.default.post(name: .ReferralSDKConfigUpdated, object: nil)
         }
+    }
+    
+    func updateReferralPromptManager() {
+        configuration.promptsEnabled ? referralPromptManager.enablePrompts() : referralPromptManager.disablePrompts()
+        referralPromptManager.setEventCombinations(configuration.eventCombinations)
+        referralPromptManager.setPromptCooldownInterval(TimeInterval(configuration.promptCooldown))
     }
 }
