@@ -20,7 +20,7 @@ A powerful and flexible referral system SDK for iOS applications that enables ea
 #### Swift Package Manager (SPM)
 
 1. In Xcode, go to `File > Swift Packages > Add Package Dependency`
-2. Add --SDK repository URL--
+2. Add `https://github.com/advato/referrals-sdk-ios`
 
 ### Usage
 
