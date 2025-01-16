@@ -262,4 +262,5 @@ Advato.shared.resetPromptCooldown()
 
 ## Support
 
-📧 Email: support@useadvato.com
+- 📚 [Implementation Guide](IMPLEMENTATION.md)
+- 📧 Email: support@useadvato.com
